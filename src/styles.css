@@ -141,12 +141,15 @@ h2 {
   display: grid;
   grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
+  min-height: calc(100vh - 230px);
 }
 
 .control-stack {
   display: grid;
+  grid-template-rows: 260px minmax(330px, auto) minmax(0, 1fr);
   gap: 18px;
+  min-height: 100%;
 }
 
 .panel {
@@ -180,7 +183,7 @@ h2 {
 
 .upload-dropzone {
   display: grid;
-  min-height: 180px;
+  height: 168px;
   place-items: center;
   border: 2px dashed #d8edc5;
   border-radius: 22px;
@@ -202,7 +205,7 @@ h2 {
 
 .upload-dropzone img {
   width: 100%;
-  height: 220px;
+  height: 100%;
   object-fit: contain;
   padding: 10px;
 }
@@ -250,6 +253,25 @@ input {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+.board-note {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding: 14px;
+  border: 1px solid #dcefd3;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f4fff0, #fffaf0);
+}
+
+.board-note strong {
+  color: var(--primary-dark);
+}
+
+.board-note span {
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 input {
@@ -354,7 +376,7 @@ input:focus {
 .color-count-list {
   display: grid;
   gap: 8px;
-  max-height: 280px;
+  max-height: min(280px, 32vh);
   overflow: auto;
   padding-right: 4px;
 }
@@ -378,7 +400,9 @@ input:focus {
 }
 
 .preview-panel {
-  min-height: 720px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 100%;
 }
 
 .preview-heading {
@@ -386,8 +410,10 @@ input:focus {
 }
 
 .canvas-wrap {
-  min-height: 620px;
-  overflow: auto;
+  display: grid;
+  min-height: 0;
+  place-items: center;
+  overflow: hidden;
   border-radius: 22px;
   border: 1px solid var(--border);
   background:
@@ -400,7 +426,8 @@ input:focus {
 
 .canvas-wrap canvas {
   display: block;
-  max-width: none;
+  max-width: 100%;
+  max-height: 100%;
   background: #ffffff;
   border-radius: 10px;
   box-shadow: var(--shadow);
@@ -408,7 +435,9 @@ input:focus {
 
 .preview-empty {
   display: grid;
-  min-height: 560px;
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
   place-items: center;
   text-align: center;
   border: 2px dashed #d8edc5;
@@ -433,14 +462,19 @@ input:focus {
 
   .workspace-grid {
     grid-template-columns: 1fr;
-  }
-
-  .preview-panel {
     min-height: auto;
   }
 
+  .control-stack {
+    grid-template-rows: auto;
+  }
+
+  .preview-panel {
+    min-height: 560px;
+  }
+
   .canvas-wrap {
-    min-height: 440px;
+    min-height: 480px;
   }
 }
 

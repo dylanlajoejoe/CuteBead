@@ -19,18 +19,31 @@ interface UploadedImage {
 function App() {
   const [uploadedImage, setUploadedImage] = useState<UploadedImage | null>(null);
   const [paletteSize, setPaletteSize] = useState<PaletteSize>(72);
-  const [width, setWidth] = useState(40);
-  const [height, setHeight] = useState(40);
   const [mergeLevel, setMergeLevel] = useState<MergeLevel>('medium');
   const [result, setResult] = useState<GenerateResult | null>(null);
   const [error, setError] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canvasWrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!result || !canvasRef.current) return;
-    const cellSize = Math.max(18, Math.min(28, Math.floor(760 / Math.max(result.pattern.width, result.pattern.height))));
-    drawPattern(canvasRef.current, result.pattern, result.colorCounts, { cellSize, includeStats: false });
+    if (!result || !canvasRef.current || !canvasWrapRef.current) return;
+
+    const redraw = () => {
+      if (!canvasRef.current || !canvasWrapRef.current) return;
+      const wrap = canvasWrapRef.current;
+      const availableWidth = Math.max(240, wrap.clientWidth - 36);
+      const availableHeight = Math.max(240, wrap.clientHeight - 36);
+      const cellSize = Math.max(
+        3,
+        Math.floor(Math.min(availableWidth / result.pattern.boardWidth, availableHeight / result.pattern.boardHeight)),
+      );
+      drawPattern(canvasRef.current, result.pattern, result.colorCounts, { cellSize, includeStats: false });
+    };
+
+    redraw();
+    window.addEventListener('resize', redraw);
+    return () => window.removeEventListener('resize', redraw);
   }, [result]);
 
   async function handleFile(file: File) {
@@ -61,13 +74,6 @@ function App() {
     if (file) void handleFile(file);
   }
 
-  function updateDimension(type: 'width' | 'height', value: string) {
-    const parsed = Number(value);
-    const safeValue = Number.isFinite(parsed) ? Math.max(1, Math.min(100, parsed)) : 1;
-    if (type === 'width') setWidth(safeValue);
-    if (type === 'height') setHeight(safeValue);
-  }
-
   async function handleGenerate() {
     if (!uploadedImage) {
       setError('请先上传图片。');
@@ -77,7 +83,7 @@ function App() {
     setError('');
     setIsGenerating(true);
     try {
-      const nextResult = await generatePattern(uploadedImage.image, { paletteSize, width, height, mergeLevel });
+      const nextResult = await generatePattern(uploadedImage.image, { paletteSize, mergeLevel });
       setResult(nextResult);
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成失败');
@@ -88,7 +94,7 @@ function App() {
 
   function handleExport() {
     if (!result) return;
-    exportPatternPng(result.pattern, result.colorCounts, `cutebead-pattern-${width}x${height}-${paletteSize}.png`);
+    exportPatternPng(result.pattern, result.colorCounts, `cutebead-pattern-100x100-${paletteSize}.png`);
   }
 
   return (
@@ -97,7 +103,7 @@ function App() {
         <div>
           <p className="eyebrow">CuteBead</p>
           <h1>把图片变成清新的拼豆图纸</h1>
-          <p className="hero-copy">选择色卡、设置尺寸，一键生成带色号和底板辅助线的拼豆图纸。</p>
+          <p className="hero-copy">选择色卡，一键生成保持原图比例的 100x100 拼豆板图纸。</p>
         </div>
         <div className="bead-badge" aria-hidden="true">
           {['#8FD694', '#FFB86B', '#FF8FAB', '#CDE8FF', '#FBED56', '#95D3C2', '#FEC0DF', '#FFFFFF', '#35E352'].map((color) => (
@@ -127,12 +133,12 @@ function App() {
             </label>
           </section>
 
-          <section className="panel">
+          <section className="panel settings-panel">
             <div className="panel-heading">
               <span className="step-dot">2</span>
               <div>
                 <h2>设置参数</h2>
-                <p>第一版最大 100x100</p>
+                <p>固定 100x100 拼豆板</p>
               </div>
             </div>
 
@@ -147,15 +153,9 @@ function App() {
               </div>
             </div>
 
-            <div className="dimension-row">
-              <div className="field-group">
-                <label htmlFor="pattern-width">宽度</label>
-                <input id="pattern-width" type="number" min="1" max="100" value={width} onChange={(event) => updateDimension('width', event.target.value)} />
-              </div>
-              <div className="field-group">
-                <label htmlFor="pattern-height">高度</label>
-                <input id="pattern-height" type="number" min="1" max="100" value={height} onChange={(event) => updateDimension('height', event.target.value)} />
-              </div>
+            <div className="board-note">
+              <strong>100x100 拼豆板</strong>
+              <span>图片会保持原始比例，自动居中放入底板。</span>
             </div>
 
             <div className="field-group">
@@ -188,7 +188,7 @@ function App() {
             {result ? (
               <>
                 <div className="stats-summary">
-                  <div><strong>{result.pattern.width}x{result.pattern.height}</strong><span>图纸尺寸</span></div>
+                  <div><strong>100x100</strong><span>底板尺寸</span></div>
                   <div><strong>{result.totalBeadCount}</strong><span>总豆数</span></div>
                   <div><strong>{result.colorCounts.length}</strong><span>颜色数</span></div>
                 </div>
@@ -213,10 +213,10 @@ function App() {
           <div className="panel-heading preview-heading">
             <div>
               <h2>图纸预览</h2>
-              <p>每 5 格虚线，每 10 格黑色实线</p>
+              <p>固定 100x100 底板，图片保持比例居中</p>
             </div>
           </div>
-          <div className="canvas-wrap">
+          <div className="canvas-wrap" ref={canvasWrapRef}>
             {result ? <canvas ref={canvasRef} /> : <div className="preview-empty">上传图片并生成后，会在这里显示图纸。</div>}
           </div>
         </section>

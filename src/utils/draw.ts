@@ -4,6 +4,7 @@ import { sortMard } from './palette';
 interface DrawOptions {
   cellSize: number;
   includeStats?: boolean;
+  showLabels?: boolean;
 }
 
 function getContrastColor(hex: string): string {
@@ -18,8 +19,8 @@ function getContrastColor(hex: string): string {
 export function drawPattern(canvas: HTMLCanvasElement, pattern: PatternData, colorCounts: ColorCount[], options: DrawOptions): void {
   const statsWidth = options.includeStats ? 260 : 0;
   const padding = options.includeStats ? 24 : 0;
-  const width = pattern.width * options.cellSize;
-  const height = pattern.height * options.cellSize;
+  const width = pattern.boardWidth * options.cellSize;
+  const height = pattern.boardHeight * options.cellSize;
   canvas.width = width + statsWidth + padding;
   canvas.height = Math.max(height, options.includeStats ? 120 + colorCounts.length * 28 : height);
 
@@ -31,17 +32,17 @@ export function drawPattern(canvas: HTMLCanvasElement, pattern: PatternData, col
 
   pattern.cells.forEach((row) => {
     row.forEach((cell) => {
-      const x = cell.col * options.cellSize;
-      const y = cell.row * options.cellSize;
+      const boardX = (cell.col + pattern.offsetX) * options.cellSize;
+      const boardY = (cell.row + pattern.offsetY) * options.cellSize;
       ctx.fillStyle = cell.hex;
-      ctx.fillRect(x, y, options.cellSize, options.cellSize);
+      ctx.fillRect(boardX, boardY, options.cellSize, options.cellSize);
 
-      if (options.cellSize >= 18) {
+      if (options.showLabels !== false && options.cellSize >= 12) {
         ctx.fillStyle = getContrastColor(cell.hex);
-        ctx.font = `${Math.max(8, Math.floor(options.cellSize * 0.34))}px Arial, sans-serif`;
+        ctx.font = `${Math.max(6, Math.floor(options.cellSize * 0.34))}px Arial, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(cell.mard, x + options.cellSize / 2, y + options.cellSize / 2);
+        ctx.fillText(cell.mard, boardX + options.cellSize / 2, boardY + options.cellSize / 2);
       }
     });
   });
@@ -49,12 +50,12 @@ export function drawPattern(canvas: HTMLCanvasElement, pattern: PatternData, col
   drawGrid(ctx, pattern, options.cellSize);
 
   if (options.includeStats) {
-    drawStats(ctx, pattern.width * options.cellSize + padding, 24, colorCounts);
+    drawStats(ctx, pattern.boardWidth * options.cellSize + padding, 24, colorCounts);
   }
 }
 
 function drawGrid(ctx: CanvasRenderingContext2D, pattern: PatternData, cellSize: number): void {
-  for (let col = 0; col <= pattern.width; col += 1) {
+  for (let col = 0; col <= pattern.boardWidth; col += 1) {
     const x = col * cellSize;
     if (col % 10 === 0) {
       ctx.setLineDash([]);
@@ -62,8 +63,8 @@ function drawGrid(ctx: CanvasRenderingContext2D, pattern: PatternData, cellSize:
       ctx.lineWidth = 2;
     } else if (col % 5 === 0) {
       ctx.setLineDash([4, 4]);
-      ctx.strokeStyle = '#111111';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(47, 42, 37, 0.38)';
+      ctx.lineWidth = 0.75;
     } else {
       ctx.setLineDash([]);
       ctx.strokeStyle = 'rgba(47, 42, 37, 0.22)';
@@ -71,11 +72,11 @@ function drawGrid(ctx: CanvasRenderingContext2D, pattern: PatternData, cellSize:
     }
     ctx.beginPath();
     ctx.moveTo(x, 0);
-    ctx.lineTo(x, pattern.height * cellSize);
+    ctx.lineTo(x, pattern.boardHeight * cellSize);
     ctx.stroke();
   }
 
-  for (let row = 0; row <= pattern.height; row += 1) {
+  for (let row = 0; row <= pattern.boardHeight; row += 1) {
     const y = row * cellSize;
     if (row % 10 === 0) {
       ctx.setLineDash([]);
@@ -83,8 +84,8 @@ function drawGrid(ctx: CanvasRenderingContext2D, pattern: PatternData, cellSize:
       ctx.lineWidth = 2;
     } else if (row % 5 === 0) {
       ctx.setLineDash([4, 4]);
-      ctx.strokeStyle = '#111111';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(47, 42, 37, 0.38)';
+      ctx.lineWidth = 0.75;
     } else {
       ctx.setLineDash([]);
       ctx.strokeStyle = 'rgba(47, 42, 37, 0.22)';
@@ -92,7 +93,7 @@ function drawGrid(ctx: CanvasRenderingContext2D, pattern: PatternData, cellSize:
     }
     ctx.beginPath();
     ctx.moveTo(0, y);
-    ctx.lineTo(pattern.width * cellSize, y);
+    ctx.lineTo(pattern.boardWidth * cellSize, y);
     ctx.stroke();
   }
   ctx.setLineDash([]);
@@ -120,7 +121,7 @@ function drawStats(ctx: CanvasRenderingContext2D, x: number, y: number, colorCou
 
 export function exportPatternPng(pattern: PatternData, colorCounts: ColorCount[], fileName: string): void {
   const canvas = document.createElement('canvas');
-  const cellSize = Math.max(18, Math.min(32, Math.floor(1200 / Math.max(pattern.width, pattern.height))));
+  const cellSize = Math.max(18, Math.min(32, Math.floor(1200 / Math.max(pattern.boardWidth, pattern.boardHeight))));
   drawPattern(canvas, pattern, colorCounts, { cellSize, includeStats: true });
   const link = document.createElement('a');
   link.download = fileName;

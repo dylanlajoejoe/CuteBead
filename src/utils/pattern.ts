@@ -7,6 +7,8 @@ const mergeThresholds = {
   high: 18,
 };
 
+const BOARD_SIZE = 100;
+
 interface OklabColor {
   l: number;
   a: number;
@@ -152,10 +154,6 @@ export async function loadImageFromFile(file: File): Promise<HTMLImageElement> {
 }
 
 export async function generatePattern(image: HTMLImageElement, options: GenerateOptions): Promise<GenerateResult> {
-  if (options.width < 1 || options.height < 1 || options.width > 100 || options.height > 100) {
-    throw new Error('图纸尺寸必须在 1 到 100 之间');
-  }
-
   const palette = loadPalette(options.paletteSize);
   const sourceCanvas = document.createElement('canvas');
   const sourceCtx = sourceCanvas.getContext('2d');
@@ -165,14 +163,20 @@ export async function generatePattern(image: HTMLImageElement, options: Generate
   sourceCanvas.height = image.naturalHeight || image.height;
   sourceCtx.drawImage(image, 0, 0, sourceCanvas.width, sourceCanvas.height);
 
+  const aspectRatio = sourceCanvas.width / sourceCanvas.height;
+  const patternWidth = aspectRatio >= 1 ? BOARD_SIZE : Math.max(1, Math.round(BOARD_SIZE * aspectRatio));
+  const patternHeight = aspectRatio >= 1 ? Math.max(1, Math.round(BOARD_SIZE / aspectRatio)) : BOARD_SIZE;
+  const offsetX = Math.floor((BOARD_SIZE - patternWidth) / 2);
+  const offsetY = Math.floor((BOARD_SIZE - patternHeight) / 2);
+
   const imageData = sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
-  const cellWidth = sourceCanvas.width / options.width;
-  const cellHeight = sourceCanvas.height / options.height;
+  const cellWidth = sourceCanvas.width / patternWidth;
+  const cellHeight = sourceCanvas.height / patternHeight;
 
   const cells: PatternCell[][] = [];
-  for (let row = 0; row < options.height; row += 1) {
+  for (let row = 0; row < patternHeight; row += 1) {
     const line: PatternCell[] = [];
-    for (let col = 0; col < options.width; col += 1) {
+    for (let col = 0; col < patternWidth; col += 1) {
       const startX = Math.floor(col * cellWidth);
       const startY = Math.floor(row * cellHeight);
       const endX = Math.min(sourceCanvas.width, Math.ceil((col + 1) * cellWidth));
@@ -184,13 +188,21 @@ export async function generatePattern(image: HTMLImageElement, options: Generate
     cells.push(line);
   }
 
-  const initialPattern: PatternData = { width: options.width, height: options.height, cells };
+  const initialPattern: PatternData = {
+    width: patternWidth,
+    height: patternHeight,
+    boardWidth: BOARD_SIZE,
+    boardHeight: BOARD_SIZE,
+    offsetX,
+    offsetY,
+    cells,
+  };
   const pattern = mergeByFrequency(initialPattern, palette, mergeThresholds[options.mergeLevel]);
   const colorCounts = createColorCounts(pattern);
 
   return {
     pattern,
     colorCounts,
-    totalBeadCount: options.width * options.height,
+    totalBeadCount: pattern.width * pattern.height,
   };
 }

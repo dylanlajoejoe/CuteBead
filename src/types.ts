@@ -24,6 +24,10 @@ export interface PatternCell {
 export interface PatternData {
   width: number;
   height: number;
+  boardWidth: number;
+  boardHeight: number;
+  offsetX: number;
+  offsetY: number;
   cells: PatternCell[][];
 }
 
@@ -35,8 +39,6 @@ export interface ColorCount {
 
 export interface GenerateOptions {
   paletteSize: PaletteSize;
-  width: number;
-  height: number;
   mergeLevel: MergeLevel;
 }
 
