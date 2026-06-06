@@ -204,8 +204,11 @@ h2 {
 }
 
 .upload-dropzone img {
-  width: 100%;
-  height: 100%;
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
   object-fit: contain;
   padding: 10px;
 }
@@ -272,6 +275,32 @@ input {
 .board-note span {
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.range-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.range-label-row strong {
+  color: var(--primary-dark);
+}
+
+.range-input {
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  accent-color: var(--primary-dark);
+  background: #e4f5d7;
+}
+
+.field-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
 }
 
 input {

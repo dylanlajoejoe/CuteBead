@@ -163,9 +163,11 @@ export async function generatePattern(image: HTMLImageElement, options: Generate
   sourceCanvas.height = image.naturalHeight || image.height;
   sourceCtx.drawImage(image, 0, 0, sourceCanvas.width, sourceCanvas.height);
 
+  const scalePercent = Math.max(10, Math.min(100, options.scalePercent));
+  const maxPatternSize = Math.max(1, Math.round(BOARD_SIZE * (scalePercent / 100)));
   const aspectRatio = sourceCanvas.width / sourceCanvas.height;
-  const patternWidth = aspectRatio >= 1 ? BOARD_SIZE : Math.max(1, Math.round(BOARD_SIZE * aspectRatio));
-  const patternHeight = aspectRatio >= 1 ? Math.max(1, Math.round(BOARD_SIZE / aspectRatio)) : BOARD_SIZE;
+  const patternWidth = aspectRatio >= 1 ? maxPatternSize : Math.max(1, Math.round(maxPatternSize * aspectRatio));
+  const patternHeight = aspectRatio >= 1 ? Math.max(1, Math.round(maxPatternSize / aspectRatio)) : maxPatternSize;
   const offsetX = Math.floor((BOARD_SIZE - patternWidth) / 2);
   const offsetY = Math.floor((BOARD_SIZE - patternHeight) / 2);
 

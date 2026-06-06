@@ -40,6 +40,7 @@ export interface ColorCount {
 export interface GenerateOptions {
   paletteSize: PaletteSize;
   mergeLevel: MergeLevel;
+  scalePercent: number;
 }
 
 export interface GenerateResult {

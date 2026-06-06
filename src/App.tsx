@@ -19,6 +19,7 @@ interface UploadedImage {
 function App() {
   const [uploadedImage, setUploadedImage] = useState<UploadedImage | null>(null);
   const [paletteSize, setPaletteSize] = useState<PaletteSize>(72);
+  const [scalePercent, setScalePercent] = useState(80);
   const [mergeLevel, setMergeLevel] = useState<MergeLevel>('medium');
   const [result, setResult] = useState<GenerateResult | null>(null);
   const [error, setError] = useState('');
@@ -83,7 +84,7 @@ function App() {
     setError('');
     setIsGenerating(true);
     try {
-      const nextResult = await generatePattern(uploadedImage.image, { paletteSize, mergeLevel });
+      const nextResult = await generatePattern(uploadedImage.image, { paletteSize, mergeLevel, scalePercent });
       setResult(nextResult);
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成失败');
@@ -103,7 +104,7 @@ function App() {
         <div>
           <p className="eyebrow">CuteBead</p>
           <h1>把图片变成清新的拼豆图纸</h1>
-          <p className="hero-copy">选择色卡，一键生成保持原图比例的 100x100 拼豆板图纸。</p>
+          <p className="hero-copy">选择色卡和图案大小，一键生成保持原图比例的 100x100 拼豆板图纸。</p>
         </div>
         <div className="bead-badge" aria-hidden="true">
           {['#8FD694', '#FFB86B', '#FF8FAB', '#CDE8FF', '#FBED56', '#95D3C2', '#FEC0DF', '#FFFFFF', '#35E352'].map((color) => (
@@ -155,7 +156,25 @@ function App() {
 
             <div className="board-note">
               <strong>100x100 拼豆板</strong>
-              <span>图片会保持原始比例，自动居中放入底板。</span>
+              <span>图片会保持原始比例，按图案大小自动居中放入底板。</span>
+            </div>
+
+            <div className="field-group">
+              <div className="range-label-row">
+                <label htmlFor="scalePercent">图案大小</label>
+                <strong>{scalePercent}%</strong>
+              </div>
+              <input
+                id="scalePercent"
+                className="range-input"
+                type="range"
+                min="10"
+                max="100"
+                step="5"
+                value={scalePercent}
+                onChange={(event) => setScalePercent(Number(event.target.value))}
+              />
+              <p className="field-hint">控制图片占底板的最大比例，不改变图片原始比例。</p>
             </div>
 
             <div className="field-group">
