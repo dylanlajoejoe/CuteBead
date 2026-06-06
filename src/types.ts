@@ -1,4 +1,5 @@
 export type PaletteSize = 72 | 96 | 144 | 221;
+export type BoardSize = 52 | 78 | 104 | 208;
 export type MergeLevel = 'low' | 'medium' | 'high';
 
 export interface RgbColor {
@@ -38,6 +39,7 @@ export interface ColorCount {
 }
 
 export interface GenerateOptions {
+  boardSize: BoardSize;
   paletteSize: PaletteSize;
   mergeLevel: MergeLevel;
   scalePercent: number;

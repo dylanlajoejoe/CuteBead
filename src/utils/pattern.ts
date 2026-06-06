@@ -7,11 +7,15 @@ const mergeThresholds = {
   high: 18,
 };
 
-const BOARD_SIZE = 100;
-
 interface OklabColor {
   l: number;
   a: number;
+  b: number;
+}
+
+interface RunningRgbTotal {
+  r: number;
+  g: number;
   b: number;
 }
 
@@ -70,28 +74,80 @@ function findClosestColor(rgb: RgbColor, palette: PaletteColor[]): PaletteColor 
   return closest;
 }
 
-function getDominantColor(imageData: ImageData, startX: number, startY: number, width: number, height: number): RgbColor {
-  const counts = new Map<string, number>();
+function getLuminance(rgb: RgbColor): number {
+  return 0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b;
+}
+
+function blendRgb(base: RgbColor, detail: RgbColor, detailWeight: number): RgbColor {
+  const weight = Math.max(0, Math.min(1, detailWeight));
+  const baseWeight = 1 - weight;
+  return {
+    r: Math.round(base.r * baseWeight + detail.r * weight),
+    g: Math.round(base.g * baseWeight + detail.g * weight),
+    b: Math.round(base.b * baseWeight + detail.b * weight),
+  };
+}
+
+function getRepresentativeColor(imageData: ImageData, startX: number, startY: number, width: number, height: number): RgbColor {
   const data = imageData.data;
-  let bestKey = '255,255,255';
-  let bestCount = 0;
+  const totals: RunningRgbTotal = { r: 0, g: 0, b: 0 };
+  let opaqueCount = 0;
+  let darkest: RgbColor = { r: 255, g: 255, b: 255 };
+  let darkestLuminance = Infinity;
 
   for (let y = startY; y < startY + height; y += 1) {
     for (let x = startX; x < startX + width; x += 1) {
       const index = (y * imageData.width + x) * 4;
       if (data[index + 3] < 128) continue;
-      const key = `${data[index]},${data[index + 1]},${data[index + 2]}`;
-      const nextCount = (counts.get(key) ?? 0) + 1;
-      counts.set(key, nextCount);
-      if (nextCount > bestCount) {
-        bestCount = nextCount;
-        bestKey = key;
+      const pixel = {
+        r: data[index],
+        g: data[index + 1],
+        b: data[index + 2],
+      };
+      totals.r += pixel.r;
+      totals.g += pixel.g;
+      totals.b += pixel.b;
+      opaqueCount += 1;
+
+      const luminance = getLuminance(pixel);
+      if (luminance < darkestLuminance) {
+        darkest = pixel;
+        darkestLuminance = luminance;
       }
     }
   }
 
-  const [r, g, b] = bestKey.split(',').map(Number);
-  return { r, g, b };
+  if (opaqueCount === 0) return { r: 255, g: 255, b: 255 };
+
+  const average = {
+    r: Math.round(totals.r / opaqueCount),
+    g: Math.round(totals.g / opaqueCount),
+    b: Math.round(totals.b / opaqueCount),
+  };
+  const averageLuminance = getLuminance(average);
+
+  let darkDetailCount = 0;
+  for (let y = startY; y < startY + height; y += 1) {
+    for (let x = startX; x < startX + width; x += 1) {
+      const index = (y * imageData.width + x) * 4;
+      if (data[index + 3] < 128) continue;
+      const pixel = {
+        r: data[index],
+        g: data[index + 1],
+        b: data[index + 2],
+      };
+      if (getLuminance(pixel) < averageLuminance - 50) {
+        darkDetailCount += 1;
+      }
+    }
+  }
+
+  const darkRatio = darkDetailCount / opaqueCount;
+  const hasStrongDarkDetail = darkRatio >= 0.06 && darkRatio <= 0.38 && darkestLuminance < averageLuminance - 60;
+  if (!hasStrongDarkDetail) return average;
+
+  const detailWeight = Math.min(0.58, 0.28 + darkRatio * 0.9);
+  return blendRgb(average, darkest, detailWeight);
 }
 
 function createColorCounts(pattern: PatternData): ColorCount[] {
@@ -155,6 +211,7 @@ export async function loadImageFromFile(file: File): Promise<HTMLImageElement> {
 
 export async function generatePattern(image: HTMLImageElement, options: GenerateOptions): Promise<GenerateResult> {
   const palette = loadPalette(options.paletteSize);
+  const boardSize = options.boardSize;
   const sourceCanvas = document.createElement('canvas');
   const sourceCtx = sourceCanvas.getContext('2d');
   if (!sourceCtx) throw new Error('无法创建 Canvas');
@@ -164,12 +221,12 @@ export async function generatePattern(image: HTMLImageElement, options: Generate
   sourceCtx.drawImage(image, 0, 0, sourceCanvas.width, sourceCanvas.height);
 
   const scalePercent = Math.max(10, Math.min(100, options.scalePercent));
-  const maxPatternSize = Math.max(1, Math.round(BOARD_SIZE * (scalePercent / 100)));
+  const maxPatternSize = Math.max(1, Math.round(boardSize * (scalePercent / 100)));
   const aspectRatio = sourceCanvas.width / sourceCanvas.height;
   const patternWidth = aspectRatio >= 1 ? maxPatternSize : Math.max(1, Math.round(maxPatternSize * aspectRatio));
   const patternHeight = aspectRatio >= 1 ? Math.max(1, Math.round(maxPatternSize / aspectRatio)) : maxPatternSize;
-  const offsetX = Math.floor((BOARD_SIZE - patternWidth) / 2);
-  const offsetY = Math.floor((BOARD_SIZE - patternHeight) / 2);
+  const offsetX = Math.floor((boardSize - patternWidth) / 2);
+  const offsetY = Math.floor((boardSize - patternHeight) / 2);
 
   const imageData = sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
   const cellWidth = sourceCanvas.width / patternWidth;
@@ -183,8 +240,8 @@ export async function generatePattern(image: HTMLImageElement, options: Generate
       const startY = Math.floor(row * cellHeight);
       const endX = Math.min(sourceCanvas.width, Math.ceil((col + 1) * cellWidth));
       const endY = Math.min(sourceCanvas.height, Math.ceil((row + 1) * cellHeight));
-      const dominant = getDominantColor(imageData, startX, startY, Math.max(1, endX - startX), Math.max(1, endY - startY));
-      const closest = findClosestColor(dominant, palette);
+      const representative = getRepresentativeColor(imageData, startX, startY, Math.max(1, endX - startX), Math.max(1, endY - startY));
+      const closest = findClosestColor(representative, palette);
       line.push({ row, col, hex: closest.hex, mard: closest.mard, rgb: closest.rgb });
     }
     cells.push(line);
@@ -193,8 +250,8 @@ export async function generatePattern(image: HTMLImageElement, options: Generate
   const initialPattern: PatternData = {
     width: patternWidth,
     height: patternHeight,
-    boardWidth: BOARD_SIZE,
-    boardHeight: BOARD_SIZE,
+    boardWidth: boardSize,
+    boardHeight: boardSize,
     offsetX,
     offsetY,
     cells,

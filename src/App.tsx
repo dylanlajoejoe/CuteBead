@@ -1,9 +1,10 @@
 import { ChangeEvent, DragEvent, useEffect, useRef, useState } from 'react';
-import type { GenerateResult, MergeLevel, PaletteSize } from './types';
+import type { BoardSize, GenerateResult, MergeLevel, PaletteSize } from './types';
 import { exportPatternPng, drawPattern } from './utils/draw';
 import { generatePattern, loadImageFromFile } from './utils/pattern';
 
 const paletteSizes: PaletteSize[] = [72, 96, 144, 221];
+const boardSizes: BoardSize[] = [52, 78, 104, 208];
 const mergeLevels: { label: string; value: MergeLevel; description: string }[] = [
   { label: '低', value: 'low', description: '保留更多细节' },
   { label: '中', value: 'medium', description: '推荐默认' },
@@ -18,6 +19,7 @@ interface UploadedImage {
 
 function App() {
   const [uploadedImage, setUploadedImage] = useState<UploadedImage | null>(null);
+  const [boardSize, setBoardSize] = useState<BoardSize>(104);
   const [paletteSize, setPaletteSize] = useState<PaletteSize>(72);
   const [scalePercent, setScalePercent] = useState(80);
   const [mergeLevel, setMergeLevel] = useState<MergeLevel>('medium');
@@ -84,7 +86,7 @@ function App() {
     setError('');
     setIsGenerating(true);
     try {
-      const nextResult = await generatePattern(uploadedImage.image, { paletteSize, mergeLevel, scalePercent });
+      const nextResult = await generatePattern(uploadedImage.image, { boardSize, paletteSize, mergeLevel, scalePercent });
       setResult(nextResult);
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成失败');
@@ -95,7 +97,7 @@ function App() {
 
   function handleExport() {
     if (!result) return;
-    exportPatternPng(result.pattern, result.colorCounts, `cutebead-pattern-100x100-${paletteSize}.png`);
+    exportPatternPng(result.pattern, result.colorCounts, `cutebead-pattern-${result.pattern.boardWidth}x${result.pattern.boardHeight}-${paletteSize}.png`);
   }
 
   return (
@@ -139,7 +141,18 @@ function App() {
               <span className="step-dot">2</span>
               <div>
                 <h2>设置参数</h2>
-                <p>固定 100x100 拼豆板</p>
+                <p>选择色卡、底板和图案大小</p>
+              </div>
+            </div>
+
+            <div className="field-group">
+              <label>拼豆底板</label>
+              <div className="segmented-grid">
+                {boardSizes.map((size) => (
+                  <button key={size} className={boardSize === size ? 'active' : ''} onClick={() => setBoardSize(size)} type="button">
+                    {size} x {size}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -155,7 +168,7 @@ function App() {
             </div>
 
             <div className="board-note">
-              <strong>100x100 拼豆板</strong>
+              <strong>{boardSize} x {boardSize} 拼豆板</strong>
               <span>图片会保持原始比例，按图案大小自动居中放入底板。</span>
             </div>
 
@@ -207,7 +220,7 @@ function App() {
             {result ? (
               <>
                 <div className="stats-summary">
-                  <div><strong>100x100</strong><span>底板尺寸</span></div>
+                  <div><strong>{result.pattern.boardWidth}x{result.pattern.boardHeight}</strong><span>底板尺寸</span></div>
                   <div><strong>{result.totalBeadCount}</strong><span>总豆数</span></div>
                   <div><strong>{result.colorCounts.length}</strong><span>颜色数</span></div>
                 </div>
@@ -232,7 +245,7 @@ function App() {
           <div className="panel-heading preview-heading">
             <div>
               <h2>图纸预览</h2>
-              <p>固定 100x100 底板，图片保持比例居中</p>
+              <p>{boardSize} x {boardSize} 正方形底板，图片保持比例居中</p>
             </div>
           </div>
           <div className="canvas-wrap" ref={canvasWrapRef}>

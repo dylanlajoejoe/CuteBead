@@ -141,8 +141,7 @@ h2 {
   display: grid;
   grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
   gap: 24px;
-  align-items: stretch;
-  min-height: calc(100vh - 230px);
+  align-items: start;
 }
 
 .control-stack {
@@ -431,7 +430,7 @@ input:focus {
 .preview-panel {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  min-height: 100%;
+  min-height: 0;
 }
 
 .preview-heading {
@@ -440,9 +439,11 @@ input:focus {
 
 .canvas-wrap {
   display: grid;
+  width: 100%;
+  aspect-ratio: 1 / 1;
   min-height: 0;
   place-items: center;
-  overflow: hidden;
+  overflow: auto;
   border-radius: 22px;
   border: 1px solid var(--border);
   background:
@@ -491,7 +492,6 @@ input:focus {
 
   .workspace-grid {
     grid-template-columns: 1fr;
-    min-height: auto;
   }
 
   .control-stack {
@@ -503,7 +503,23 @@ input:focus {
   }
 
   .canvas-wrap {
-    min-height: 480px;
+    min-height: 0;
+  }
+}
+
+@media (min-width: 981px) {
+  .workspace-grid {
+    grid-template-columns: minmax(360px, 420px) minmax(620px, 820px);
+    justify-content: center;
+  }
+
+  .control-stack,
+  .preview-panel {
+    height: clamp(720px, calc(100vh - 170px), 920px);
+  }
+
+  .control-stack {
+    grid-template-rows: 0.9fr 1.2fr 1fr;
   }
 }
 
