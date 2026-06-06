@@ -1,0 +1,18 @@
+page {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(143, 214, 148, 0.26), transparent 38%),
+    linear-gradient(180deg, #fff8ef 0%, #f4fff0 100%);
+  color: #2f2a25;
+  font-family: "PingFang SC", "Noto Sans SC", sans-serif;
+}
+
+view,
+button,
+text {
+  box-sizing: border-box;
+}
+
+button::after {
+  border: 0;
+}

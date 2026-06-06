@@ -1,0 +1,9 @@
+{
+  "desc": "CuteBead sitemap",
+  "rules": [
+    {
+      "action": "allow",
+      "page": "*"
+    }
+  ]
+}

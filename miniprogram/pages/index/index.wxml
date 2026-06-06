@@ -1,0 +1,153 @@
+<scroll-view class="page" scroll-y="true">
+  <view class="hero card">
+    <text class="eyebrow">CuteBead Mini</text>
+    <text class="hero-title">把图片变成拼豆图纸</text>
+    <text class="hero-copy">上传图片，选择底板尺寸、色卡和图案大小，直接在手机里生成预览和统计。</text>
+  </view>
+
+  <view class="card section-card">
+    <view class="section-head">
+      <view class="step-dot">1</view>
+      <view>
+        <view class="section-title">上传图片</view>
+        <view class="section-copy">显示完整原图预览</view>
+      </view>
+    </view>
+
+    <button class="upload-zone" bindtap="onChooseImage">
+      <image wx:if="{{previewImagePath}}" class="upload-image" src="{{previewImagePath}}" mode="aspectFit" />
+      <text wx:else>点击选择 PNG、JPG、WEBP 图片</text>
+    </button>
+  </view>
+
+  <view class="card section-card">
+    <view class="section-head">
+      <view class="step-dot">2</view>
+      <view>
+        <view class="section-title">设置参数</view>
+        <view class="section-copy">默认使用 104 x 104 正方形底板</view>
+      </view>
+    </view>
+
+    <view class="field-group">
+      <text class="field-label">拼豆底板</text>
+      <view class="chip-grid">
+        <view
+          wx:for="{{boardSizes}}"
+          wx:key="*this"
+          class="chip {{boardSize === item ? 'chip-active' : ''}}"
+          data-value="{{item}}"
+          bindtap="onBoardSizeChange"
+        >
+          {{item}} x {{item}}
+        </view>
+      </view>
+    </view>
+
+    <view class="field-group">
+      <text class="field-label">色卡颜色数</text>
+      <view class="chip-grid">
+        <view
+          wx:for="{{paletteSizes}}"
+          wx:key="*this"
+          class="chip {{paletteSize === item ? 'chip-active' : ''}}"
+          data-value="{{item}}"
+          bindtap="onPaletteSizeChange"
+        >
+          {{item}}色
+        </view>
+      </view>
+    </view>
+
+    <view class="board-note">
+      <text class="board-title">{{boardSize}} x {{boardSize}} 拼豆板</text>
+      <text class="board-copy">图片保持原始比例，按图案大小自动居中放入底板。</text>
+    </view>
+
+    <view class="field-group">
+      <view class="range-row">
+        <text class="field-label">图案大小</text>
+        <text class="range-value">{{scalePercent}}%</text>
+      </view>
+      <slider min="10" max="100" step="5" value="{{scalePercent}}" activeColor="#58b368" backgroundColor="#e4f5d7" bindchange="onScaleChange" />
+      <text class="field-hint">控制图片占底板的最大比例，不改变图片原始比例。</text>
+    </view>
+
+    <view class="field-group">
+      <text class="field-label">合并强度</text>
+      <view class="merge-list">
+        <view
+          wx:for="{{mergeLevels}}"
+          wx:key="value"
+          class="merge-card {{mergeLevel === item.value ? 'merge-active' : ''}}"
+          data-value="{{item.value}}"
+          bindtap="onMergeLevelChange"
+        >
+          <text class="merge-title">{{item.label}}</text>
+          <text class="merge-copy">{{item.description}}</text>
+        </view>
+      </view>
+    </view>
+
+    <button class="primary-button" disabled="{{!imagePath || isGenerating}}" bindtap="onGenerate">
+      {{isGenerating ? '生成中...' : '生成图纸'}}
+    </button>
+    <text wx:if="{{error}}" class="error-message">{{error}}</text>
+  </view>
+
+  <view class="card section-card preview-card">
+    <view class="section-head">
+      <view class="step-dot">3</view>
+      <view>
+        <view class="section-title">图纸预览</view>
+        <view class="section-copy">{{boardSize}} x {{boardSize}} 正方形底板</view>
+      </view>
+    </view>
+
+    <scroll-view class="preview-shell" scroll-x="true" scroll-y="true" enhanced="true" show-scrollbar="false">
+      <view class="preview-square" style="width: {{previewViewportSize}}px; height: {{previewViewportSize}}px;">
+        <canvas wx:if="{{result}}" id="previewCanvas" type="2d" class="preview-canvas" style="width: {{previewViewportSize}}px; height: {{previewViewportSize}}px;"></canvas>
+        <view wx:else class="preview-empty">上传图片并生成后，会在这里显示图纸。</view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="card section-card">
+    <view class="section-head">
+      <view class="step-dot">4</view>
+      <view>
+        <view class="section-title">统计与保存</view>
+        <view class="section-copy">查看颜色数量并保存图纸</view>
+      </view>
+    </view>
+
+    <block wx:if="{{result}}">
+      <view class="stats-summary">
+        <view class="stats-box">
+          <text class="stats-value">{{result.pattern.boardWidth}}x{{result.pattern.boardHeight}}</text>
+          <text class="stats-label">底板尺寸</text>
+        </view>
+        <view class="stats-box">
+          <text class="stats-value">{{result.totalBeadCount}}</text>
+          <text class="stats-label">总豆数</text>
+        </view>
+        <view class="stats-box">
+          <text class="stats-value">{{result.colorCounts.length}}</text>
+          <text class="stats-label">颜色数</text>
+        </view>
+      </view>
+
+      <view class="color-list">
+        <view wx:for="{{result.colorCounts}}" wx:key="mard" class="color-item">
+          <view class="color-swatch" style="background: {{item.hex}};"></view>
+          <text class="color-mard">{{item.mard}}</text>
+          <text class="color-count">{{item.count}} 颗</text>
+        </view>
+      </view>
+
+      <button class="secondary-button" bindtap="onSaveImage">保存 PNG 到相册</button>
+    </block>
+
+    <text wx:else class="empty-copy">生成图纸后，这里会显示颜色统计和保存按钮。</text>
+  </view>
+</scroll-view>
