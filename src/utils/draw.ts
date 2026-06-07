@@ -39,7 +39,10 @@ export function drawPattern(canvas: HTMLCanvasElement, pattern: PatternData, col
 
       if (options.showLabels !== false && options.cellSize >= 12) {
         ctx.fillStyle = getContrastColor(cell.hex);
-        ctx.font = `${Math.max(6, Math.floor(options.cellSize * 0.34))}px Arial, sans-serif`;
+        const fontSize = options.includeStats
+          ? Math.max(8, Math.floor(options.cellSize * 0.42))
+          : Math.max(6, Math.floor(options.cellSize * 0.34));
+        ctx.font = `${fontSize}px Arial, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(cell.mard, boardX + options.cellSize / 2, boardY + options.cellSize / 2);
@@ -176,7 +179,11 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: n
 
 export function exportPatternPng(pattern: PatternData, colorCounts: ColorCount[], fileName: string): void {
   const canvas = document.createElement('canvas');
-  const cellSize = Math.max(18, Math.min(32, Math.floor(1200 / Math.max(pattern.boardWidth, pattern.boardHeight))));
+  const maxBoardSize = Math.max(pattern.boardWidth, pattern.boardHeight);
+  const targetSize = maxBoardSize >= 156 ? 1800 : 1600;
+  const minCellSize = maxBoardSize >= 156 ? 22 : 20;
+  const maxCellSize = maxBoardSize >= 156 ? 40 : 36;
+  const cellSize = Math.max(minCellSize, Math.min(maxCellSize, Math.floor(targetSize / maxBoardSize)));
   drawPattern(canvas, pattern, colorCounts, { cellSize, includeStats: true });
   const link = document.createElement('a');
   link.download = fileName;
