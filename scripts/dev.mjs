@@ -1,8 +1,12 @@
 import { networkInterfaces } from 'node:os';
 import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
 const port = process.env.PORT || '5173';
 const host = process.env.HOST || '0.0.0.0';
+const scriptDir = dirname(fileURLToPath(import.meta.url));
+const viteCli = resolve(scriptDir, '../node_modules/vite/bin/vite.js');
 
 function getWifiAddress() {
   const nets = networkInterfaces();
@@ -32,8 +36,7 @@ if (wifiAddress) {
 }
 console.log('');
 
-const viteBin = process.platform === 'win32' ? 'vite.cmd' : 'vite';
-const child = spawn(viteBin, ['--host', host, '--port', port, '--clearScreen', 'false'], {
+const child = spawn(process.execPath, [viteCli, '--host', host, '--port', port, '--clearScreen', 'false'], {
   stdio: ['inherit', 'pipe', 'pipe'],
   shell: false,
 });
