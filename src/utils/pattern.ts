@@ -74,104 +74,28 @@ function findClosestColor(rgb: RgbColor, palette: PaletteColor[]): PaletteColor 
   return closest;
 }
 
-function getLuminance(rgb: RgbColor): number {
-  return 0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b;
-}
-
-function blendRgb(base: RgbColor, detail: RgbColor, detailWeight: number): RgbColor {
-  const weight = Math.max(0, Math.min(1, detailWeight));
-  const baseWeight = 1 - weight;
-  return {
-    r: Math.round(base.r * baseWeight + detail.r * weight),
-    g: Math.round(base.g * baseWeight + detail.g * weight),
-    b: Math.round(base.b * baseWeight + detail.b * weight),
-  };
-}
-
-function stretchContrast(rgb: RgbColor, amount: number): RgbColor {
-  const factor = 1 + Math.max(0, amount);
-  const stretch = (channel: number) => Math.max(0, Math.min(255, Math.round((channel - 128) * factor + 128)));
-  return {
-    r: stretch(rgb.r),
-    g: stretch(rgb.g),
-    b: stretch(rgb.b),
-  };
-}
-
-function isNearNeutral(rgb: RgbColor): boolean {
-  return Math.max(rgb.r, rgb.g, rgb.b) - Math.min(rgb.r, rgb.g, rgb.b) <= 24;
-}
-
-function forceHighContrast(rgb: RgbColor): RgbColor {
-  const luminance = getLuminance(rgb);
-  if (!isNearNeutral(rgb)) return rgb;
-  if (luminance <= 78) return { r: 0, g: 0, b: 0 };
-  if (luminance >= 222) return { r: 255, g: 255, b: 255 };
-  if (luminance <= 118) return stretchContrast(rgb, 0.7);
-  if (luminance >= 182) return stretchContrast(rgb, 0.55);
-  return stretchContrast(rgb, 0.35);
-}
-
-function getRepresentativeColor(imageData: ImageData, startX: number, startY: number, width: number, height: number): RgbColor {
+function getDominantColor(imageData: ImageData, startX: number, startY: number, width: number, height: number): RgbColor {
+  const counts = new Map<string, number>();
   const data = imageData.data;
-  const totals: RunningRgbTotal = { r: 0, g: 0, b: 0 };
-  let opaqueCount = 0;
-  let darkest: RgbColor = { r: 255, g: 255, b: 255 };
-  let darkestLuminance = Infinity;
+  let bestKey = '255,255,255';
+  let bestCount = 0;
 
   for (let y = startY; y < startY + height; y += 1) {
     for (let x = startX; x < startX + width; x += 1) {
       const index = (y * imageData.width + x) * 4;
       if (data[index + 3] < 128) continue;
-      const pixel = {
-        r: data[index],
-        g: data[index + 1],
-        b: data[index + 2],
-      };
-      totals.r += pixel.r;
-      totals.g += pixel.g;
-      totals.b += pixel.b;
-      opaqueCount += 1;
-
-      const luminance = getLuminance(pixel);
-      if (luminance < darkestLuminance) {
-        darkest = pixel;
-        darkestLuminance = luminance;
+      const key = `${data[index]},${data[index + 1]},${data[index + 2]}`;
+      const nextCount = (counts.get(key) ?? 0) + 1;
+      counts.set(key, nextCount);
+      if (nextCount > bestCount) {
+        bestCount = nextCount;
+        bestKey = key;
       }
     }
   }
 
-  if (opaqueCount === 0) return { r: 255, g: 255, b: 255 };
-
-  const average = {
-    r: Math.round(totals.r / opaqueCount),
-    g: Math.round(totals.g / opaqueCount),
-    b: Math.round(totals.b / opaqueCount),
-  };
-  const averageLuminance = getLuminance(average);
-
-  let darkDetailCount = 0;
-  for (let y = startY; y < startY + height; y += 1) {
-    for (let x = startX; x < startX + width; x += 1) {
-      const index = (y * imageData.width + x) * 4;
-      if (data[index + 3] < 128) continue;
-      const pixel = {
-        r: data[index],
-        g: data[index + 1],
-        b: data[index + 2],
-      };
-      if (getLuminance(pixel) < averageLuminance - 50) {
-        darkDetailCount += 1;
-      }
-    }
-  }
-
-  const darkRatio = darkDetailCount / opaqueCount;
-  const hasStrongDarkDetail = darkRatio >= 0.06 && darkRatio <= 0.38 && darkestLuminance < averageLuminance - 60;
-  if (!hasStrongDarkDetail) return forceHighContrast(average);
-
-  const detailWeight = Math.min(0.58, 0.28 + darkRatio * 0.9);
-  return forceHighContrast(blendRgb(average, darkest, detailWeight));
+  const [r, g, b] = bestKey.split(',').map(Number);
+  return { r, g, b };
 }
 
 function createColorCounts(pattern: PatternData): ColorCount[] {
@@ -251,25 +175,20 @@ export async function generatePattern(image: HTMLImageElement, options: Generate
   const patternHeight = aspectRatio >= 1 ? Math.max(1, Math.round(maxPatternSize / aspectRatio)) : maxPatternSize;
   const offsetX = Math.floor((boardSize - patternWidth) / 2);
   const offsetY = Math.floor((boardSize - patternHeight) / 2);
-
-  const scaledCanvas = document.createElement('canvas');
-  const scaledCtx = scaledCanvas.getContext('2d');
-  if (!scaledCtx) throw new Error('无法创建缩放 Canvas');
-
-  scaledCanvas.width = patternWidth;
-  scaledCanvas.height = patternHeight;
-  scaledCtx.imageSmoothingEnabled = true;
-  scaledCtx.imageSmoothingQuality = 'high';
-  scaledCtx.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height, 0, 0, patternWidth, patternHeight);
-
-  const imageData = scaledCtx.getImageData(0, 0, patternWidth, patternHeight);
+  const imageData = sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
+  const cellWidth = sourceCanvas.width / patternWidth;
+  const cellHeight = sourceCanvas.height / patternHeight;
 
   const cells: PatternCell[][] = [];
   for (let row = 0; row < patternHeight; row += 1) {
     const line: PatternCell[] = [];
     for (let col = 0; col < patternWidth; col += 1) {
-      const representative = getRepresentativeColor(imageData, col, row, 1, 1);
-      const closest = findClosestColor(representative, palette);
+      const startX = Math.floor(col * cellWidth);
+      const startY = Math.floor(row * cellHeight);
+      const endX = Math.min(sourceCanvas.width, Math.ceil((col + 1) * cellWidth));
+      const endY = Math.min(sourceCanvas.height, Math.ceil((row + 1) * cellHeight));
+      const dominant = getDominantColor(imageData, startX, startY, Math.max(1, endX - startX), Math.max(1, endY - startY));
+      const closest = findClosestColor(dominant, palette);
       line.push({ row, col, hex: closest.hex, mard: closest.mard, rgb: closest.rgb });
     }
     cells.push(line);
