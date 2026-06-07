@@ -106,7 +106,7 @@ function App() {
         <div>
           <p className="eyebrow">CuteBead</p>
           <h1>把图片变成清新的拼豆图纸</h1>
-          <p className="hero-copy">选择色卡和图案大小，一键生成保持原图比例的 100x100 拼豆板图纸。</p>
+          <p className="hero-copy">选择色卡、底板尺寸和图案大小，一键生成保持原图比例的拼豆板图纸。</p>
         </div>
         <div className="bead-badge" aria-hidden="true">
           {['#8FD694', '#FFB86B', '#FF8FAB', '#CDE8FF', '#FBED56', '#95D3C2', '#FEC0DF', '#FFFFFF', '#35E352'].map((color) => (

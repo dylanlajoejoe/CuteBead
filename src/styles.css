@@ -50,6 +50,18 @@ button:disabled {
   padding: 28px;
 }
 
+.upload-panel {
+  order: 1;
+}
+
+.settings-panel {
+  order: 2;
+}
+
+.stats-panel {
+  order: 4;
+}
+
 .hero-card,
 .panel {
   border: 1px solid rgba(241, 227, 211, 0.88);
@@ -431,6 +443,7 @@ input:focus {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
+  order: 3;
 }
 
 .preview-heading {
@@ -482,28 +495,117 @@ input:focus {
 
 @media (max-width: 980px) {
   .app-shell {
-    padding: 16px;
+    width: min(100%, 760px);
+    padding: 14px;
   }
 
   .hero-card {
     align-items: flex-start;
     flex-direction: column;
+    gap: 18px;
+    margin-bottom: 18px;
+    padding: 22px 18px;
+    border-radius: 26px;
   }
 
   .workspace-grid {
     grid-template-columns: 1fr;
+    gap: 18px;
   }
 
   .control-stack {
+    display: contents;
     grid-template-rows: auto;
   }
 
+  .panel {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .panel-heading {
+    margin-bottom: 14px;
+  }
+
+  .step-dot {
+    width: 32px;
+    height: 32px;
+    font-size: 0.92rem;
+  }
+
+  .upload-dropzone {
+    height: 200px;
+    border-radius: 20px;
+  }
+
+  .segmented-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .segmented-grid button {
+    min-height: 46px;
+    padding: 12px 10px;
+  }
+
+  .merge-list button {
+    display: grid;
+    justify-content: stretch;
+    gap: 4px;
+    text-align: left;
+    padding: 12px 14px;
+  }
+
+  .primary-button,
+  .secondary-button {
+    min-height: 50px;
+    padding: 15px 16px;
+  }
+
   .preview-panel {
-    min-height: 560px;
+    gap: 12px;
+  }
+
+  .preview-heading {
+    margin-bottom: 0;
   }
 
   .canvas-wrap {
+    padding: 12px;
+    border-radius: 20px;
+  }
+
+  .preview-empty {
     min-height: 0;
+    padding: 24px;
+    font-size: 0.96rem;
+  }
+
+  .stats-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .stats-summary div {
+    padding: 14px 8px;
+  }
+
+  .color-count-list {
+    gap: 10px;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .color-count-item {
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 10px 12px;
+  }
+
+  .color-count-item strong,
+  .color-count-item span:last-child {
+    font-size: 0.95rem;
   }
 }
 
@@ -524,13 +626,87 @@ input:focus {
 }
 
 @media (max-width: 560px) {
+  .app-shell {
+    padding: 12px;
+  }
+
+  .hero-card {
+    padding: 18px 16px;
+    border-radius: 24px;
+  }
+
+  .hero-copy {
+    font-size: 0.96rem;
+  }
+
+  .bead-badge {
+    grid-template-columns: repeat(3, 30px);
+    gap: 8px;
+    padding: 14px;
+  }
+
+  .bead-badge span {
+    width: 30px;
+    height: 30px;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  .panel-heading {
+    align-items: flex-start;
+  }
+
+  .field-group {
+    margin-bottom: 14px;
+  }
+
+  .field-group label,
+  .range-label-row strong,
+  .board-note strong {
+    font-size: 0.92rem;
+  }
+
   .segmented-grid,
-  .dimension-row,
-  .stats-summary {
+  .dimension-row {
     grid-template-columns: 1fr 1fr;
   }
 
   h1 {
     font-size: 2.2rem;
+  }
+
+  .upload-dropzone {
+    height: 180px;
+  }
+
+  .stats-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-summary strong {
+    font-size: 1rem;
+  }
+
+  .color-count-item {
+    grid-template-columns: 22px 1fr;
+    grid-template-areas:
+      "swatch mard"
+      "swatch count";
+    align-items: start;
+  }
+
+  .color-swatch {
+    grid-area: swatch;
+  }
+
+  .color-count-item strong {
+    grid-area: mard;
+  }
+
+  .color-count-item span:last-child {
+    grid-area: count;
+    color: var(--muted);
   }
 }
