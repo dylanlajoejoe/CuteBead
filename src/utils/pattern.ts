@@ -88,6 +88,100 @@ function blendRgb(base: RgbColor, detail: RgbColor, detailWeight: number): RgbCo
   };
 }
 
+function stretchContrast(rgb: RgbColor, amount: number): RgbColor {
+  const factor = 1 + Math.max(0, amount);
+  const stretch = (channel: number) => Math.max(0, Math.min(255, Math.round((channel - 128) * factor + 128)));
+  return {
+    r: stretch(rgb.r),
+    g: stretch(rgb.g),
+    b: stretch(rgb.b),
+  };
+}
+
+function rgbToHsl(rgb: RgbColor): { h: number; s: number; l: number } {
+  const r = rgb.r / 255;
+  const g = rgb.g / 255;
+  const b = rgb.b / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+
+  if (max === min) {
+    return { h: 0, s: 0, l };
+  }
+
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+
+  switch (max) {
+    case r:
+      h = (g - b) / d + (g < b ? 6 : 0);
+      break;
+    case g:
+      h = (b - r) / d + 2;
+      break;
+    default:
+      h = (r - g) / d + 4;
+      break;
+  }
+
+  return { h: h / 6, s, l };
+}
+
+function hueToRgb(p: number, q: number, t: number): number {
+  let value = t;
+  if (value < 0) value += 1;
+  if (value > 1) value -= 1;
+  if (value < 1 / 6) return p + (q - p) * 6 * value;
+  if (value < 1 / 2) return q;
+  if (value < 2 / 3) return p + (q - p) * (2 / 3 - value) * 6;
+  return p;
+}
+
+function hslToRgb(hsl: { h: number; s: number; l: number }): RgbColor {
+  const { h, s, l } = hsl;
+  if (s === 0) {
+    const gray = Math.round(l * 255);
+    return { r: gray, g: gray, b: gray };
+  }
+
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  return {
+    r: Math.round(hueToRgb(p, q, h + 1 / 3) * 255),
+    g: Math.round(hueToRgb(p, q, h) * 255),
+    b: Math.round(hueToRgb(p, q, h - 1 / 3) * 255),
+  };
+}
+
+function isNearNeutral(rgb: RgbColor): boolean {
+  return Math.max(rgb.r, rgb.g, rgb.b) - Math.min(rgb.r, rgb.g, rgb.b) <= 24;
+}
+
+function forceHighContrast(rgb: RgbColor): RgbColor {
+  const luminance = getLuminance(rgb);
+  if (!isNearNeutral(rgb)) return rgb;
+  if (luminance <= 78) return { r: 0, g: 0, b: 0 };
+  if (luminance >= 222) return { r: 255, g: 255, b: 255 };
+  if (luminance <= 118) return stretchContrast(rgb, 0.7);
+  if (luminance >= 182) return stretchContrast(rgb, 0.55);
+  return stretchContrast(rgb, 0.35);
+}
+
+function boostColorPurity(rgb: RgbColor): RgbColor {
+  if (isNearNeutral(rgb)) return forceHighContrast(rgb);
+
+  const hsl = rgbToHsl(rgb);
+  const boosted = {
+    h: hsl.h,
+    s: Math.min(1, hsl.s * 1.28 + 0.08),
+    l: Math.max(0, Math.min(1, hsl.l < 0.5 ? hsl.l * 0.96 : hsl.l * 1.02)),
+  };
+
+  return stretchContrast(hslToRgb(boosted), 0.18);
+}
+
 function getRepresentativeColor(imageData: ImageData, startX: number, startY: number, width: number, height: number): RgbColor {
   const data = imageData.data;
   const totals: RunningRgbTotal = { r: 0, g: 0, b: 0 };
@@ -144,10 +238,10 @@ function getRepresentativeColor(imageData: ImageData, startX: number, startY: nu
 
   const darkRatio = darkDetailCount / opaqueCount;
   const hasStrongDarkDetail = darkRatio >= 0.06 && darkRatio <= 0.38 && darkestLuminance < averageLuminance - 60;
-  if (!hasStrongDarkDetail) return average;
+  if (!hasStrongDarkDetail) return boostColorPurity(average);
 
   const detailWeight = Math.min(0.58, 0.28 + darkRatio * 0.9);
-  return blendRgb(average, darkest, detailWeight);
+  return boostColorPurity(blendRgb(average, darkest, detailWeight));
 }
 
 function createColorCounts(pattern: PatternData): ColorCount[] {

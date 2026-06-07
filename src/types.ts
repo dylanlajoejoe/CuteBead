@@ -1,5 +1,5 @@
 export type PaletteSize = 72 | 96 | 144 | 221;
-export type BoardSize = 52 | 78 | 104 | 208;
+export type BoardSize = 52 | 78 | 104 | 156 | 208;
 export type MergeLevel = 'low' | 'medium' | 'high';
 
 export interface RgbColor {

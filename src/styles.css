@@ -58,8 +58,11 @@ button:disabled {
   order: 2;
 }
 
-.stats-panel {
-  order: 4;
+.preview-stack {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 18px;
+  min-height: 0;
 }
 
 .hero-card,
@@ -216,10 +219,8 @@ h2 {
 
 .upload-dropzone img {
   display: block;
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   padding: 10px;
 }
@@ -327,20 +328,22 @@ input:focus {
 
 .merge-list {
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
 .merge-list button {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 11px 12px;
+  display: grid;
+  justify-items: center;
+  gap: 0;
+  min-height: 48px;
+  padding: 10px 8px;
+  text-align: center;
 }
 
 .merge-list span {
   color: var(--muted);
-  font-size: 0.86rem;
+  font-size: 0.8rem;
 }
 
 .primary-button,
@@ -443,7 +446,10 @@ input:focus {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
-  order: 3;
+}
+
+.preview-meta {
+  min-height: 0;
 }
 
 .preview-heading {
@@ -464,7 +470,6 @@ input:focus {
     linear-gradient(-45deg, rgba(255, 184, 107, 0.08) 25%, transparent 25%),
     #fffdf8;
   background-size: 24px 24px;
-  padding: 18px;
 }
 
 .canvas-wrap canvas {
@@ -480,13 +485,13 @@ input:focus {
   display: grid;
   width: 100%;
   height: 100%;
-  min-height: 420px;
   place-items: center;
   text-align: center;
   border: 2px dashed #d8edc5;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.72);
   font-weight: 800;
+  padding: 24px;
 }
 
 .empty-copy {
@@ -516,6 +521,10 @@ input:focus {
   .control-stack {
     display: contents;
     grid-template-rows: auto;
+  }
+
+  .preview-stack {
+    display: contents;
   }
 
   .panel {
@@ -550,10 +559,11 @@ input:focus {
 
   .merge-list button {
     display: grid;
-    justify-content: stretch;
-    gap: 4px;
-    text-align: left;
-    padding: 12px 14px;
+    justify-content: center;
+    gap: 0;
+    min-height: 46px;
+    text-align: center;
+    padding: 10px 8px;
   }
 
   .primary-button,
@@ -571,7 +581,6 @@ input:focus {
   }
 
   .canvas-wrap {
-    padding: 12px;
     border-radius: 20px;
   }
 
@@ -611,12 +620,12 @@ input:focus {
 
 @media (min-width: 981px) {
   .workspace-grid {
-    grid-template-columns: minmax(360px, 420px) minmax(620px, 820px);
+    grid-template-columns: minmax(380px, 460px) minmax(900px, 956px);
     justify-content: center;
   }
 
   .control-stack,
-  .preview-panel {
+  .preview-stack {
     height: clamp(720px, calc(100vh - 170px), 920px);
   }
 

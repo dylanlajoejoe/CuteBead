@@ -4,11 +4,11 @@ import { exportPatternPng, drawPattern } from './utils/draw';
 import { generatePattern, loadImageFromFile } from './utils/pattern';
 
 const paletteSizes: PaletteSize[] = [72, 96, 144, 221];
-const boardSizes: BoardSize[] = [52, 78, 104, 208];
-const mergeLevels: { label: string; value: MergeLevel; description: string }[] = [
-  { label: '低', value: 'low', description: '保留更多细节' },
-  { label: '中', value: 'medium', description: '推荐默认' },
-  { label: '高', value: 'high', description: '减少更多杂色' },
+const boardSizes: BoardSize[] = [52, 78, 104, 156, 208];
+const mergeLevels: { label: string; value: MergeLevel }[] = [
+  { label: '高', value: 'low' },
+  { label: '中', value: 'medium' },
+  { label: '低', value: 'high' },
 ];
 
 interface UploadedImage {
@@ -41,7 +41,7 @@ function App() {
         3,
         Math.floor(Math.min(availableWidth / result.pattern.boardWidth, availableHeight / result.pattern.boardHeight)),
       );
-      drawPattern(canvasRef.current, result.pattern, result.colorCounts, { cellSize, includeStats: false });
+      drawPattern(canvasRef.current, result.pattern, result.colorCounts, { cellSize, includeStats: false, showLabels: false });
     };
 
     redraw();
@@ -149,9 +149,7 @@ function App() {
               <label>拼豆底板</label>
               <div className="segmented-grid">
                 {boardSizes.map((size) => (
-                  <button key={size} className={boardSize === size ? 'active' : ''} onClick={() => setBoardSize(size)} type="button">
-                    {size} x {size}
-                  </button>
+                  <button key={size} className={boardSize === size ? 'active' : ''} onClick={() => setBoardSize(size)} type="button">{size}</button>
                 ))}
               </div>
             </div>
@@ -165,11 +163,6 @@ function App() {
                   </button>
                 ))}
               </div>
-            </div>
-
-            <div className="board-note">
-              <strong>{boardSize} x {boardSize} 拼豆板</strong>
-              <span>图片会保持原始比例，按图案大小自动居中放入底板。</span>
             </div>
 
             <div className="field-group">
@@ -191,12 +184,11 @@ function App() {
             </div>
 
             <div className="field-group">
-              <label>合并强度</label>
+              <label>细节保留</label>
               <div className="merge-list">
                 {mergeLevels.map((level) => (
                   <button key={level.value} className={mergeLevel === level.value ? 'merge-active' : ''} onClick={() => setMergeLevel(level.value)} type="button">
                     <strong>{level.label}</strong>
-                    <span>{level.description}</span>
                   </button>
                 ))}
               </div>
@@ -207,8 +199,10 @@ function App() {
             </button>
             {error && <p className="error-message">{error}</p>}
           </section>
+        </aside>
 
-          <section className="panel stats-panel">
+        <section className="preview-stack">
+          <section className="preview-meta panel stats-panel">
             <div className="panel-heading">
               <span className="step-dot">3</span>
               <div>
@@ -239,18 +233,17 @@ function App() {
               <p className="empty-copy">生成图纸后，这里会显示颜色用量和导出按钮。</p>
             )}
           </section>
-        </aside>
 
-        <section className="preview-panel panel">
-          <div className="panel-heading preview-heading">
-            <div>
-              <h2>图纸预览</h2>
-              <p>{boardSize} x {boardSize} 正方形底板，图片保持比例居中</p>
+          <section className="preview-panel panel">
+            <div className="panel-heading preview-heading">
+              <div>
+                <h2>图纸预览</h2>
+              </div>
             </div>
-          </div>
-          <div className="canvas-wrap" ref={canvasWrapRef}>
-            {result ? <canvas ref={canvasRef} /> : <div className="preview-empty">上传图片并生成后，会在这里显示图纸。</div>}
-          </div>
+            <div className="canvas-wrap" ref={canvasWrapRef}>
+              {result ? <canvas ref={canvasRef} /> : <div className="preview-empty">上传图片并生成后，会在这里显示图纸。</div>}
+            </div>
+          </section>
         </section>
       </section>
     </main>
