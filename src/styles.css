@@ -387,6 +387,11 @@ input:focus {
   font-weight: 700;
 }
 
+.export-copy {
+  margin: 0;
+  color: var(--muted);
+}
+
 .stats-summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -446,6 +451,7 @@ input:focus {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
+  align-self: start;
 }
 
 .preview-meta {
@@ -624,13 +630,16 @@ input:focus {
     justify-content: center;
   }
 
-  .control-stack,
-  .preview-stack {
+  .control-stack {
     height: clamp(720px, calc(100vh - 170px), 920px);
   }
 
   .control-stack {
     grid-template-rows: 0.9fr 1.2fr 1fr;
+  }
+
+  .preview-panel {
+    min-height: 980px;
   }
 }
 

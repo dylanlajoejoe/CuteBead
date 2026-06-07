@@ -252,19 +252,23 @@ export async function generatePattern(image: HTMLImageElement, options: Generate
   const offsetX = Math.floor((boardSize - patternWidth) / 2);
   const offsetY = Math.floor((boardSize - patternHeight) / 2);
 
-  const imageData = sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
-  const cellWidth = sourceCanvas.width / patternWidth;
-  const cellHeight = sourceCanvas.height / patternHeight;
+  const scaledCanvas = document.createElement('canvas');
+  const scaledCtx = scaledCanvas.getContext('2d');
+  if (!scaledCtx) throw new Error('无法创建缩放 Canvas');
+
+  scaledCanvas.width = patternWidth;
+  scaledCanvas.height = patternHeight;
+  scaledCtx.imageSmoothingEnabled = true;
+  scaledCtx.imageSmoothingQuality = 'high';
+  scaledCtx.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height, 0, 0, patternWidth, patternHeight);
+
+  const imageData = scaledCtx.getImageData(0, 0, patternWidth, patternHeight);
 
   const cells: PatternCell[][] = [];
   for (let row = 0; row < patternHeight; row += 1) {
     const line: PatternCell[] = [];
     for (let col = 0; col < patternWidth; col += 1) {
-      const startX = Math.floor(col * cellWidth);
-      const startY = Math.floor(row * cellHeight);
-      const endX = Math.min(sourceCanvas.width, Math.ceil((col + 1) * cellWidth));
-      const endY = Math.min(sourceCanvas.height, Math.ceil((row + 1) * cellHeight));
-      const representative = getRepresentativeColor(imageData, startX, startY, Math.max(1, endX - startX), Math.max(1, endY - startY));
+      const representative = getRepresentativeColor(imageData, col, row, 1, 1);
       const closest = findClosestColor(representative, palette);
       line.push({ row, col, hex: closest.hex, mard: closest.mard, rgb: closest.rgb });
     }

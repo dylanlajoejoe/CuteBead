@@ -206,31 +206,18 @@ function App() {
             <div className="panel-heading">
               <span className="step-dot">3</span>
               <div>
-                <h2>统计导出</h2>
-                <p>查看用量并下载 PNG</p>
+                <h2>导出图片</h2>
+                <p>生成后导出 PNG 图纸</p>
               </div>
             </div>
 
             {result ? (
               <>
-                <div className="stats-summary">
-                  <div><strong>{result.pattern.boardWidth}x{result.pattern.boardHeight}</strong><span>底板尺寸</span></div>
-                  <div><strong>{result.totalBeadCount}</strong><span>总豆数</span></div>
-                  <div><strong>{result.colorCounts.length}</strong><span>颜色数</span></div>
-                </div>
-                <div className="color-count-list">
-                  {result.colorCounts.map((item) => (
-                    <div className="color-count-item" key={item.mard}>
-                      <span className="color-swatch" style={{ backgroundColor: item.hex }} />
-                      <strong>{item.mard}</strong>
-                      <span>{item.count} 颗</span>
-                    </div>
-                  ))}
-                </div>
+                <p className="export-copy">当前图纸已生成，可以直接导出 PNG 图片。</p>
                 <button className="secondary-button" onClick={handleExport} type="button">导出 PNG</button>
               </>
             ) : (
-              <p className="empty-copy">生成图纸后，这里会显示颜色用量和导出按钮。</p>
+              <p className="empty-copy">生成图纸后，这里会显示导出按钮。</p>
             )}
           </section>
 
