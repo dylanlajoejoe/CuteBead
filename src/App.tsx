@@ -126,7 +126,7 @@ function App() {
               </div>
             </div>
 
-            <label className="upload-dropzone" onDragOver={(event) => event.preventDefault()} onDrop={handleDrop}>
+            <label className={`upload-dropzone${uploadedImage ? ' has-image' : ''}`} onDragOver={(event) => event.preventDefault()} onDrop={handleDrop}>
               <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFileChange} />
               {uploadedImage ? (
                 <img src={uploadedImage.previewUrl} alt="上传的原图预览" />
